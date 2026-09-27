@@ -15,25 +15,16 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>
-    /// Everything that happens during a game: applying a loaded save (in the hall and again when the run
-    /// starts), saving after every night survived and after every purchase, and deleting the save when
-    /// the run is lost. Only the host (the one running the game) does any of this.
-    /// </summary>
     internal static class SaveSession
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
-        /// <summary>Save chosen with "Load" in the menu, waiting for the run to start.</summary>
         public static SaveData PendingLoad;
 
-        /// <summary>True when the player chose "Host anyway" with no free save slots.</summary>
         public static bool SkipSaving;
 
-        /// <summary>The save linked to the run being played (null = this run isn't saved).</summary>
         public static SaveData Current;
 
-        /// <summary>Game version as shown in the main menu (e.g. "1.1").</summary>
         public static string GameVersion = "";
 
         private static MethodInfo forEachPlayerMethod;
@@ -41,13 +32,10 @@ namespace LucidCatsSaves
         private static MethodInfo confirmPurchaseRpc;
         private static FieldInfo currentLobbyField;
 
-        // Players already taken care of in the hall (value = their entry in the save, or null if new).
         private static Dictionary<PlayerManager, PlayerSave> hallHandled = new Dictionary<PlayerManager, PlayerSave>();
 
-        // True when the "photo" taken at Start game differs from the save (e.g. purchases in the hall).
         private static bool hallChangesToSave;
 
-        // While we give upgrades back, the game's "upgrade applied" moment must not trigger a save.
         private static bool restoring;
         private static float suppressSavesUntil;
         private static bool saveScheduled;
@@ -63,7 +51,6 @@ namespace LucidCatsSaves
             return string.IsNullOrEmpty(GameVersion) ? Application.version : GameVersion;
         }
 
-        /// <summary>Back in the main menu: forget everything about the previous session.</summary>
         public static void ResetForMainMenu()
         {
             PendingLoad = null;
@@ -74,11 +61,6 @@ namespace LucidCatsSaves
             hallChangesToSave = false;
         }
 
-        // ---------------------------------------------------------------------------------
-        // Loading: in the hall, before the run starts
-        // ---------------------------------------------------------------------------------
-
-        /// <summary>Called by the menu's "Load" button, right before hosting.</summary>
         public static void BeginLoad(SaveData save)
         {
             PendingLoad = save;
@@ -86,10 +68,6 @@ namespace LucidCatsSaves
             CoroutineRunner.Run(ApplyInHallRoutine(save));
         }
 
-        /// <summary>
-        /// While everyone waits in the hall, shows the loaded game right away: the night, and each
-        /// player's money and upgrades as soon as they arrive (friends included).
-        /// </summary>
         private static IEnumerator ApplyInHallRoutine(SaveData save)
         {
             float giveUpAt = Time.unscaledTime + 120f;
@@ -107,7 +85,6 @@ namespace LucidCatsSaves
 
                 if (nights != null && game != null && nights.IsServer)
                 {
-                    // Once the run starts, OnGameStarted takes over.
                     if (game.CurrentGameState.Value != GameState.WaitingToStart)
                         yield break;
 
@@ -142,7 +119,6 @@ namespace LucidCatsSaves
             if (nights.CurrentNightNumber.Value != save.night)
                 nights.CurrentNightNumber.Value = save.night;
 
-            // Players who left the hall free their save entry, so it's theirs again if they come back.
             var gone = new List<PlayerManager>();
             foreach (KeyValuePair<PlayerManager, PlayerSave> pair in handled)
                 if (pair.Key == null)
@@ -163,7 +139,6 @@ namespace LucidCatsSaves
                 if (!firstSeen.ContainsKey(player))
                     firstSeen[player] = Time.unscaledTime;
 
-                // A friend who just joined may not have their Steam name yet: wait a little for it.
                 if (!IsNameReady(player) && Time.unscaledTime - firstSeen[player] < 10f)
                     continue;
 
@@ -183,11 +158,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>
-        /// Runs right before the game resets everything at "Start game": takes a "photo" of what each
-        /// player has in the hall (purchases included), so that is what gets restored after the reset.
-        /// Players the hall routine hasn't dealt with yet keep their saved data as it is.
-        /// </summary>
         public static void CaptureHallState(bool log = true)
         {
             SaveData save = PendingLoad;
@@ -210,7 +180,6 @@ namespace LucidCatsSaves
 
                     if (entry == null)
                     {
-                        // Someone who wasn't in the save: only worth noting if they have something.
                         if (credits == 0 && items.Count == 0)
                             continue;
                         entry = new PlayerSave();
@@ -240,10 +209,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>
-        /// Saves a loaded game while everyone is still in the hall, before "Start game"
-        /// (for example, right after a purchase there).
-        /// </summary>
         private static void SaveLoadedGameInHall()
         {
             SaveData save = PendingLoad;
@@ -304,10 +269,6 @@ namespace LucidCatsSaves
             return true;
         }
 
-        // ---------------------------------------------------------------------------------
-        // Run start
-        // ---------------------------------------------------------------------------------
-
         private static void OnGameStarted()
         {
             try
@@ -321,8 +282,6 @@ namespace LucidCatsSaves
                     Current = PendingLoad;
                     PendingLoad = null;
 
-                    // The game has just reset everyone's money: put it back straight away,
-                    // then give the upgrades back once the game has finished its own reset.
                     RestoreAll(nights, Current, restoreItems: false, log: false);
                     CoroutineRunner.Run(RestoreAtStart(Current));
                 }
@@ -354,7 +313,6 @@ namespace LucidCatsSaves
 
         private static IEnumerator RestoreAtStart(SaveData save)
         {
-            // Two frames: enough for every "new game" reset on the host to have run.
             yield return null;
             yield return null;
 
@@ -380,7 +338,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>Puts the saved night, money and (optionally) upgrades back for everyone present.</summary>
         private static int RestoreAll(NightManager nights, SaveData save, bool restoreItems, bool log)
         {
             nights.CurrentNightNumber.Value = save.night;
@@ -413,7 +370,6 @@ namespace LucidCatsSaves
             return restored;
         }
 
-        /// <summary>Gives a player back their money and upgrades. Returns how many upgrades were given.</summary>
         private static int RestorePlayer(PlayerManager player, PlayerSave entry)
         {
             restoring = true;
@@ -452,18 +408,12 @@ namespace LucidCatsSaves
                 if (item == null || item.unlockedByDefault || upgrades.IsOwned(item))
                     continue;
 
-                // Same steps as a real purchase, minus the payment: the host records it,
-                // then the game's own confirmation gives it to the player on their PC.
                 applyMethod.Invoke(upgrades, new object[] { item });
                 confirmPurchaseRpc.Invoke(upgrades, new object[] { id });
                 count++;
             }
             return count;
         }
-
-        // ---------------------------------------------------------------------------------
-        // Saving
-        // ---------------------------------------------------------------------------------
 
         public static void SaveNow(NightManager nights, string reason)
         {
@@ -519,11 +469,6 @@ namespace LucidCatsSaves
                 SavesPlugin.Log.LogError($"Could not save the game: {e}");
             }
         }
-
-        /// <summary>
-        /// Called whenever the game gives someone an upgrade. If it's a real purchase in the hall
-        /// (and this run already has a save), the game is saved right away.
-        /// </summary>
         public static void OnUpgradeApplied(PlayerUpgrades upgrades)
         {
             if (restoring || Time.unscaledTime < suppressSavesUntil || saveScheduled)
@@ -535,7 +480,6 @@ namespace LucidCatsSaves
             if (nights == null || nights.CurrentNightState.Value != NightState.WaitingToSleep)
                 return;
 
-            // During a run that already has a save, or in the hall of a loaded game (before Start game).
             bool duringRun = Current != null && SaveStore.Exists(Current.id);
             bool inLoadedHall = Current == null && PendingLoad != null && SaveStore.Exists(PendingLoad.id);
             if (!duringRun && !inLoadedHall)
@@ -547,7 +491,6 @@ namespace LucidCatsSaves
 
         private static IEnumerator SaveShortly()
         {
-            // A short wait groups several quick purchases into a single save.
             yield return new WaitForSecondsRealtime(0.5f);
             saveScheduled = false;
 
@@ -570,10 +513,6 @@ namespace LucidCatsSaves
             Current = null;
         }
 
-        // ---------------------------------------------------------------------------------
-        // Helpers
-        // ---------------------------------------------------------------------------------
-
         private static List<PlayerManager> GetPlayers(NightManager nights)
         {
             var players = new List<PlayerManager>();
@@ -589,7 +528,6 @@ namespace LucidCatsSaves
             return players;
         }
 
-        /// <summary>False while the player still shows the game's temporary "Player N" name.</summary>
         private static bool IsNameReady(PlayerManager player)
         {
             return player.IsOwner || player.DisplayName != $"Player {player.OwnerClientId}";
@@ -616,7 +554,6 @@ namespace LucidCatsSaves
             return null;
         }
 
-        /// <summary>Finds a player in a save: by Steam account first, then by name.</summary>
         private static PlayerSave FindPlayer(SaveData save, string steamId, string name, HashSet<PlayerSave> used)
         {
             if (!string.IsNullOrEmpty(steamId))
@@ -630,11 +567,6 @@ namespace LucidCatsSaves
 
             return null;
         }
-
-        /// <summary>
-        /// The player's Steam account, used only to recognise them (it's never shown).
-        /// The host is us; everyone else is matched by name against the Steam lobby's members.
-        /// </summary>
         private static string GetSteamId(PlayerManager player)
         {
             try
@@ -674,7 +606,6 @@ namespace LucidCatsSaves
     [HarmonyPatch]
     internal static class SavePatches
     {
-        /// <summary>Runs after a night is won, once everyone is back in the hall.</summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(NightManager), "ResetForNextRun")]
         private static void AfterNightWon(NightManager __instance)
@@ -682,7 +613,6 @@ namespace LucidCatsSaves
             SaveSession.SaveNow(__instance, "night survived");
         }
 
-        /// <summary>Runs when a night ends; a false result means the run was lost.</summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(NightManager), "EndRunAndEvaluate")]
         private static void AfterNightEvaluated(NightManager __instance, bool __result)
@@ -691,7 +621,6 @@ namespace LucidCatsSaves
                 SaveSession.OnRunLost(__instance);
         }
 
-        /// <summary>Runs right before the game starts a run (and resets money and upgrades).</summary>
         [HarmonyPrefix]
         [HarmonyPatch(typeof(GameManager), "InternalStartGame")]
         private static void BeforeRunStarts(GameManager __instance)
@@ -700,7 +629,6 @@ namespace LucidCatsSaves
                 SaveSession.CaptureHallState();
         }
 
-        /// <summary>Runs whenever the game gives someone an upgrade (purchases included).</summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerUpgrades), "Apply")]
         private static void AfterUpgradeApplied(PlayerUpgrades __instance)

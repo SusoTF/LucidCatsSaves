@@ -10,7 +10,6 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>Small helpers to work with the game's main menu.</summary>
     internal static class MenuUtil
     {
         private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -46,7 +45,6 @@ namespace LucidCatsSaves
             rect.offsetMax = Vector2.zero;
         }
 
-        /// <summary>Finds the game's menu panel component (HaniUtils.UI.Menu or a subclass).</summary>
         public static Component FindMenuComponent(GameObject go)
         {
             foreach (MonoBehaviour mb in go.GetComponents<MonoBehaviour>())
@@ -60,7 +58,6 @@ namespace LucidCatsSaves
             return null;
         }
 
-        /// <summary>Finds the "onClick" event of the game's button script.</summary>
         public static UnityEvent FindClickEvent(GameObject go)
         {
             foreach (MonoBehaviour mb in go.GetComponents<MonoBehaviour>())
@@ -77,7 +74,6 @@ namespace LucidCatsSaves
             return null;
         }
 
-        /// <summary>Calls Open / Close / Toggle on a game menu panel.</summary>
         public static void CallMenu(Component menu, string methodName)
         {
             if (menu == null)
@@ -103,10 +99,6 @@ namespace LucidCatsSaves
         }
     }
 
-    /// <summary>
-    /// Listens to the game's own menu system: every time ANY panel opens (the game's or another mod's),
-    /// it tells our panels so they can close. This doesn't depend on how the menu is laid out.
-    /// </summary>
     internal static class MenuWatcher
     {
         public static Type MenuType { get; private set; }
@@ -150,7 +142,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>Every menu panel component currently loaded (in any scene).</summary>
         public static List<Component> AllMenus()
         {
             var result = new List<Component>();
@@ -164,10 +155,6 @@ namespace LucidCatsSaves
         }
     }
 
-    /// <summary>
-    /// Keeps menu panels exclusive: opening our panel closes every other visible panel (closing ALL the
-    /// controllers each panel has), and our panel closes as soon as any other panel opens.
-    /// </summary>
     internal class ExclusivePanel : MonoBehaviour
     {
         private sealed class Panel
@@ -181,7 +168,6 @@ namespace LucidCatsSaves
         public Component Menu;
         public CanvasGroup Group;
 
-        /// <summary>Never close a panel that contains this (the main menu buttons).</summary>
         public Transform ProtectedRoot;
 
         private readonly List<Panel> panels = new List<Panel>();
@@ -223,7 +209,6 @@ namespace LucidCatsSaves
             if (Time.unscaledTime >= nextScan)
                 Scan();
 
-            // Backup check, in case a panel opens without going through the game's Open method.
             foreach (Panel panel in panels)
             {
                 bool visible = IsVisible(panel);
@@ -233,7 +218,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>Finds every other menu panel, grouping all the controllers that live on the same panel.</summary>
         private void Scan()
         {
             nextScan = Time.unscaledTime + 2f;
@@ -241,7 +225,6 @@ namespace LucidCatsSaves
             List<Component> menus = MenuWatcher.AllMenus();
             if (menus.Count == 0 && transform.parent != null)
             {
-                // Backup: look only at the panels next to ours.
                 foreach (Transform child in transform.parent)
                     foreach (MonoBehaviour mb in child.GetComponents<MonoBehaviour>())
                         if (mb != null && IsMenuType(mb.GetType()))
@@ -288,7 +271,6 @@ namespace LucidCatsSaves
         }
     }
 
-    /// <summary>Hover and click feedback for the text buttons in our panel (Load, Delete...).</summary>
     internal class TextButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public TMP_Text Label;

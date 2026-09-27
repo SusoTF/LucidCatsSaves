@@ -14,7 +14,6 @@
     <BepInExDir>$(GameDir)\BepInEx</BepInExDir>
   </PropertyGroup>
 
-  <!-- References to BepInEx and the game. Private=false: they are NOT copied next to the mod. -->
   <ItemGroup>
     <Reference Include="$(BepInExDir)\core\BepInEx.dll" Private="false" />
     <Reference Include="$(BepInExDir)\core\0Harmony.dll" Private="false" />
@@ -26,7 +25,6 @@
     <Reference Include="$(ManagedDir)\Facepunch.Steamworks.Win64.dll" Private="false" />
   </ItemGroup>
 
-  <!-- After every build, copy the mod straight into BepInEx\plugins -->
   <Target Name="CopyToPlugins" AfterTargets="Build">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)\plugins\LucidCatsSaves" />
     <Message Importance="high" Text="Mod copied to $(BepInExDir)\plugins\LucidCatsSaves" />

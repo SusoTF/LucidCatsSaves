@@ -11,11 +11,6 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>
-    /// Adds the "Load Game" button (below Host) and its panel to the main menu. Everything is cloned
-    /// from the game's own Stats button and panel, so it looks and sounds like the rest of the menu.
-    /// It also takes over the Host button to warn you when all save slots are full.
-    /// </summary>
     internal class LoadGameMenu : MonoBehaviour
     {
         private static readonly Color LoadColor = new Color(1f, 0.85f, 0.25f);
@@ -28,7 +23,6 @@ namespace LucidCatsSaves
         private ExclusivePanel panel;
         private Transform grid;
 
-        // Hidden templates we clone every time the list is rebuilt.
         private GameObject headerTemplate;
         private GameObject rowTemplate;
 
@@ -43,7 +37,6 @@ namespace LucidCatsSaves
         private int versionRetries;
         private float nextVersionRetry;
 
-        // Renaming: the text box currently open (if any), and a request to rebuild the list safely.
         private TMP_InputField renameField;
         private bool rebuildRequested;
 
@@ -69,18 +62,15 @@ namespace LucidCatsSaves
 
         private void Update()
         {
-            // The list is rebuilt here, never from inside the text box's own events.
             if (rebuildRequested)
             {
                 rebuildRequested = false;
                 RebuildList();
             }
 
-            // Cancel a pending delete confirmation after a few seconds.
             if (deletePendingId != null && Time.unscaledTime > deletePendingUntil)
                 CancelDeleteConfirmation();
 
-            // The menu's version text may appear a moment later: retry a few times.
             if (string.IsNullOrEmpty(SaveSession.GameVersion) && versionRetries < 5 && Time.unscaledTime >= nextVersionRetry)
             {
                 versionRetries++;
@@ -89,9 +79,6 @@ namespace LucidCatsSaves
             }
         }
 
-        // ---------------------------------------------------------------------------------
-        // Building
-        // ---------------------------------------------------------------------------------
 
         private void Build()
         {
@@ -139,16 +126,11 @@ namespace LucidCatsSaves
             if (click == null)
                 throw new Exception("Could not find the click event of the Load Game button.");
 
-            // The copy still carries the Stats button's actions: switch them off and add ours.
             for (int i = 0; i < click.GetPersistentEventCount(); i++)
                 click.SetPersistentListenerState(i, UnityEventCallState.Off);
             click.AddListener(OnLoadGameClicked);
         }
 
-        /// <summary>
-        /// The Host button normally starts hosting straight away. We step in first to reset the
-        /// "load" choice and to warn when all save slots are full.
-        /// </summary>
         private void TakeOverHostButton(Transform hostButton)
         {
             UnityEvent click = MenuUtil.FindClickEvent(hostButton.gameObject);
@@ -172,7 +154,6 @@ namespace LucidCatsSaves
 
         private void BuildPanel(Transform statsPanel)
         {
-            // Clone under an inactive holder so the Stats script never wakes up in the copy.
             var holder = new GameObject("Load Game Holder");
             holder.SetActive(false);
 
@@ -189,7 +170,6 @@ namespace LucidCatsSaves
             Transform header = MenuUtil.Require(grid, "Text name");
             Transform row = MenuUtil.Require(grid, "stat display");
 
-            // Keep hidden copies of a header and a row to build the list from.
             headerTemplate = Instantiate(header.gameObject, panelObject.transform, false);
             headerTemplate.name = "Header Template";
             headerTemplate.SetActive(false);
@@ -205,7 +185,6 @@ namespace LucidCatsSaves
 
             counterText = MenuUtil.CloneText(headerTemplate.transform, grid, "Counter");
 
-            // Put the finished panel next to the Stats panel and let it wake up.
             panelObject.transform.SetParent(statsPanel.parent, false);
             panelObject.transform.SetSiblingIndex(statsPanel.GetSiblingIndex() + 1);
             Destroy(holder);
@@ -217,9 +196,6 @@ namespace LucidCatsSaves
                 throw new Exception("The cloned panel has no Menu component.");
         }
 
-        // ---------------------------------------------------------------------------------
-        // Buttons
-        // ---------------------------------------------------------------------------------
 
         private void OnLoadGameClicked()
         {
@@ -241,7 +217,6 @@ namespace LucidCatsSaves
 
             if (SaveStore.LoadAll().Count >= SaveStore.MaxSaves)
             {
-                // All slots are full: explain it and let the player decide.
                 warningMode = true;
                 RebuildList();
                 panel.Open();
@@ -275,7 +250,6 @@ namespace LucidCatsSaves
         {
             if (deletePendingId != save.id)
             {
-                // First click: ask for confirmation.
                 CancelDeleteConfirmation();
                 deletePendingId = save.id;
                 deletePendingUntil = Time.unscaledTime + DeleteConfirmSeconds;
@@ -285,7 +259,6 @@ namespace LucidCatsSaves
                 return;
             }
 
-            // Second click: delete it.
             deletePendingId = null;
             deletePendingButton = null;
             SaveStore.Delete(save.id);
@@ -304,9 +277,6 @@ namespace LucidCatsSaves
             deletePendingButton = null;
         }
 
-        // ---------------------------------------------------------------------------------
-        // List
-        // ---------------------------------------------------------------------------------
 
         private void RebuildList()
         {
@@ -376,7 +346,6 @@ namespace LucidCatsSaves
                 ? string.Join(", ", save.lastPlayers)
                 : "-";
 
-            // Night in red, money in yellow, players in bright white; dates and version keep the row's colour.
             string info =
                 $"<color=#FF3B30>NIGHT {save.night + 1}</color>  ·  " +
                 $"<color=#FFD940>{save.lastTotalCredits.ToString("N0", CultureInfo.InvariantCulture)} cr</color>\n" +
@@ -385,7 +354,6 @@ namespace LucidCatsSaves
 
             GameObject row = CreateRow("Save " + save.id, info, 124f, out RectTransform actions, out TMP_Text details);
 
-            // Leave room at the top for the save's name.
             if (details != null)
                 details.rectTransform.offsetMax = new Vector2(0f, -38f);
             AddNameLabel(row, details, save);
@@ -399,7 +367,6 @@ namespace LucidCatsSaves
             listItems.Add(row);
         }
 
-        /// <summary>A tall row: text on the left, an area for action buttons on the right.</summary>
         private GameObject CreateRow(string rowName, string text, float height, out RectTransform actions, out TMP_Text details)
         {
             GameObject row = Instantiate(rowTemplate, grid, false);
@@ -431,7 +398,6 @@ namespace LucidCatsSaves
             actions.offsetMin = new Vector2(0f, 6f);
             actions.offsetMax = new Vector2(-12f, -6f);
 
-            // The row's value text becomes the template for the action buttons.
             if (valueText != null)
             {
                 valueText.SetParent(actions, false);
@@ -465,7 +431,6 @@ namespace LucidCatsSaves
             return button;
         }
 
-        /// <summary>The save's name, on top of the row. Clicking it lets you rename the save.</summary>
         private void AddNameLabel(GameObject row, TMP_Text template, SaveData save)
         {
             if (template == null)
@@ -499,7 +464,6 @@ namespace LucidCatsSaves
 
             RectTransform labelRect = label.rectTransform;
 
-            // A small dark box in the same place as the name.
             var boxObject = new GameObject("Rename Box", typeof(RectTransform));
             boxObject.transform.SetParent(labelRect.parent, false);
             var box = (RectTransform)boxObject.transform;
@@ -528,7 +492,6 @@ namespace LucidCatsSaves
 
             label.gameObject.SetActive(false);
 
-            // Set the text box up while it's switched off, then switch it on with everything in place.
             boxObject.SetActive(false);
             TMP_InputField field = boxObject.AddComponent<TMP_InputField>();
             field.textViewport = area;
@@ -551,7 +514,6 @@ namespace LucidCatsSaves
                 return;
             renameField = null;
 
-            // Esc (or an empty name) keeps the old name.
             string cleaned = SaveStore.CleanName(value);
             if (!field.wasCanceled && cleaned.Length > 0 && cleaned != save.name)
             {
@@ -579,7 +541,6 @@ namespace LucidCatsSaves
             return date == DateTime.MinValue ? "?" : date.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Reads the "Version 1.x" text shown in the main menu.</summary>
         private string DetectGameVersion()
         {
             const string prefix = "Version ";
@@ -594,7 +555,6 @@ namespace LucidCatsSaves
                             return value.Substring(prefix.Length).Trim();
                     }
 
-                    // Some menu texts are written by an effect script that keeps the text in its own field.
                     foreach (MonoBehaviour mb in root.GetComponentsInChildren<MonoBehaviour>(true))
                     {
                         if (mb == null || mb is TMP_Text)

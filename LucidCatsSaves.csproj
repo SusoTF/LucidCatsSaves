@@ -8,9 +8,6 @@
     <Nullable>disable</Nullable>
     <Version>1.0.0</Version>
 
-    <!-- ============================================================ -->
-    <!-- Carpeta donde está LucidCats.exe                               -->
-    <!-- ============================================================ -->
     <GameDir>D:\SteamLibrary\steamapps\common\Lucid Cats</GameDir>
 
     <ManagedDir>$(GameDir)\LucidCats_Data\Managed</ManagedDir>

@@ -8,11 +8,6 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>
-    /// Shows the game's money display in the hall when you have money but it isn't on screen
-    /// (for example, in a loaded game, where no one has "woken up" after a night yet).
-    /// It opens the display directly, without the game's wake-up animation. Runs on every PC with the mod.
-    /// </summary>
     internal class MoneyDisplay : MonoBehaviour
     {
         private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -46,7 +41,6 @@ namespace LucidCatsSaves
             NightManager nights = Object.FindFirstObjectByType<NightManager>();
             if (nights == null || nights.CurrentNightState.Value != NightState.WaitingToSleep)
             {
-                // Left the hall (asleep, dreaming, back in the menu...): allow it again next time.
                 openedThisHallVisit = false;
                 return;
             }
@@ -97,7 +91,6 @@ namespace LucidCatsSaves
                 SavesPlugin.Log.LogWarning("Could not find the game's money display; it won't be opened for loaded games.");
         }
 
-        /// <summary>Whether the money display is already on screen.</summary>
         private static bool IsVisible(Component hud)
         {
             Component menu = menuProperty?.GetValue(hud) as Component;

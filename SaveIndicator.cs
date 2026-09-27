@@ -6,10 +6,6 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>
-    /// A small "Saving... / Game saved" message in the bottom-right corner, shown on the host's screen
-    /// every time the game is saved. It uses the game's own font so it fits in.
-    /// </summary>
     internal class SaveIndicator : MonoBehaviour
     {
         private static SaveIndicator instance;
@@ -69,7 +65,6 @@ namespace LucidCatsSaves
             label.text = string.Empty;
         }
 
-        /// <summary>Borrows the font from any text of the game's interface.</summary>
         private void EnsureFont()
         {
             if (fontReady)

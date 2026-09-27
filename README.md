@@ -2,8 +2,7 @@
 
 Save files for **Lucid Cats**. Leave a run whenever you want and continue it later, right where you left off: same night, same money, same upgrades. Works solo and in co-op.
 
-<!-- Arrastra aquí tu captura o GIF del menú Load Game (en el editor de GitHub se sube sola) -->
-![Load Game](PON_AQUI_TU_CAPTURA)
+<img width="1920" height="1080" alt="20260927150822_1" src="https://github.com/user-attachments/assets/fbaec232-e161-4ea6-9a89-c36b8fca859b" />
 
 ## Features
 
@@ -79,7 +78,7 @@ After launching the game once with the mod, you can edit `BepInEx\config\lucidca
 
 Delete the `BepInEx\plugins\LucidCatsSaves` folder. Your saves stay in `BepInEx\config\LucidCatsSaves`, so you can delete that folder too if you don't want them anymore.
 
-## FAQ
+## Questions that came to my mind
 
 **Does it change the gameplay?**
 No. Runs play exactly the same. The mod only remembers your progress and puts it back when you load.

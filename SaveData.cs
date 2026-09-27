@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace LucidCatsSaves
 {
-    /// <summary>What we remember about one player in a save (kept in memory; see SaveData.Pack).</summary>
     internal class PlayerSave
     {
         public string steamId = "";
@@ -16,17 +15,14 @@ namespace LucidCatsSaves
         public List<int> items = new List<int>();
     }
 
-    /// <summary>One saved game. Stored as a small text (JSON) file.</summary>
     [Serializable]
     internal class SaveData
     {
         public int format = 1;
         public string id = "";
 
-        /// <summary>Name shown in Load Game ("Save 1" by default; can be renamed).</summary>
         public string name = "";
 
-        /// <summary>Nights survived. The next night to play is night + 1.</summary>
         public int night;
 
         public string gameVersion = "";
@@ -37,18 +33,14 @@ namespace LucidCatsSaves
         public List<string> lastPlayers = new List<string>();
         public int lastTotalCredits;
 
-        // Unity can't reliably write custom data types that live inside a mod, so each player's
-        // data is written as simple parallel lists (one entry per player, same order in every list).
         public List<string> playerSteamIds = new List<string>();
         public List<string> playerNames = new List<string>();
         public List<int> playerCredits = new List<int>();
         public List<string> playerItems = new List<string>();
 
-        /// <summary>The players, rebuilt from the lists above when the file is read.</summary>
         [NonSerialized]
         public List<PlayerSave> players = new List<PlayerSave>();
 
-        /// <summary>Copies the players into the simple lists that get written to the file.</summary>
         public void Pack()
         {
             playerSteamIds = new List<string>();
@@ -65,7 +57,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>Rebuilds the players from the simple lists read from the file.</summary>
         public void Unpack()
         {
             players = new List<PlayerSave>();
@@ -106,7 +97,6 @@ namespace LucidCatsSaves
         }
     }
 
-    /// <summary>Reads and writes save files in BepInEx\config\LucidCatsSaves.</summary>
     internal static class SaveStore
     {
         public const int MaxSaves = 5;
@@ -115,7 +105,6 @@ namespace LucidCatsSaves
 
         private static string PathFor(string id) => Path.Combine(Folder, id + ".json");
 
-        /// <summary>All valid saves, most recently saved first.</summary>
         public static List<SaveData> LoadAll()
         {
             var saves = new List<SaveData>();
@@ -146,7 +135,6 @@ namespace LucidCatsSaves
 
         public const int MaxNameLength = 24;
 
-        /// <summary>First free "Save N" name among the given saves.</summary>
         public static string NextDefaultName(List<SaveData> saves)
         {
             for (int n = 1; ; n++)
@@ -157,7 +145,6 @@ namespace LucidCatsSaves
             }
         }
 
-        /// <summary>Removes characters that would break the text and keeps the name short.</summary>
         public static string CleanName(string raw)
         {
             if (string.IsNullOrEmpty(raw))
@@ -179,7 +166,6 @@ namespace LucidCatsSaves
             WriteFile(save);
         }
 
-        /// <summary>Saves made before names existed get "Save N" (oldest first), once.</summary>
         private static void AssignMissingNames(List<SaveData> saves)
         {
             var unnamed = saves.FindAll(s => string.IsNullOrWhiteSpace(s.name));
@@ -222,7 +208,6 @@ namespace LucidCatsSaves
 
             save.Pack();
 
-            // Write to a temporary file first, so a crash mid-write never corrupts an existing save.
             File.WriteAllText(temp, JsonUtility.ToJson(save, true));
             if (File.Exists(path))
                 File.Delete(path);

@@ -6,11 +6,6 @@ using Object = UnityEngine.Object;
 
 namespace LucidCatsSaves
 {
-    /// <summary>
-    /// Plays the game's own button sounds (hover and click). The sounds are read from the
-    /// Stats button and played through the same audio route the game uses for its buttons,
-    /// so they respect your volume settings.
-    /// </summary>
     internal static class UiSounds
     {
         private const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -21,14 +16,12 @@ namespace LucidCatsSaves
         private static float volume = 1f;
         private static float pitch = 1f;
 
-        // The game's static "PlayHandler" (on its button audio script) that routes UI sounds.
         private static FieldInfo handlerField;
         private static PropertyInfo handlerProperty;
 
         private static AudioSource fallbackSource;
         private static bool warnedOnce;
 
-        /// <summary>Reads the sounds from one of the game's menu buttons.</summary>
         public static void CaptureFrom(GameObject button)
         {
             foreach (MonoBehaviour script in button.GetComponents<MonoBehaviour>())
@@ -94,10 +87,8 @@ namespace LucidCatsSaves
             PlayFallback(clip);
         }
 
-        /// <summary>Builds the game's sound description object (clip + volume + pitch).</summary>
         private static object CreateSfx(Type sfxType, AudioClip clip)
         {
-            // Preferred: a constructor like (AudioClip clip, float volume, float pitch).
             foreach (ConstructorInfo ctor in sfxType.GetConstructors(InstanceFlags))
             {
                 ParameterInfo[] parameters = ctor.GetParameters();
@@ -118,7 +109,6 @@ namespace LucidCatsSaves
                 return ctor.Invoke(args);
             }
 
-            // Otherwise: create it empty and fill in the members by name.
             object sfx;
             try
             {

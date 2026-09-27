@@ -46,7 +46,6 @@ namespace LucidCatsSaves
         }
     }
 
-    /// <summary>A hidden object that survives scene changes, used to run timed tasks.</summary>
     internal class CoroutineRunner : MonoBehaviour
     {
         private static CoroutineRunner instance;

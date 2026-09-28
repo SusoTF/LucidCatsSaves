@@ -104,6 +104,9 @@ Not at the moment. Delete or reuse an old one to free a slot.
 ### 1.0.0
 - First release.
 
+### 1.0.1
+- The mod's description and author are now included in its file, so mod managers can show them.
+
 ## Credits
 
 - **Sustain**, for helping me test the multiplayer side of the mod.
